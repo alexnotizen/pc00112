@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BÀI 12 – NGỮ PHÁP - Flashcard</title>
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0; min-height:100vh; font-family:Arial,"Microsoft YaHei",sans-serif;
+  background:#fdfbf7;
+  display:flex; justify-content:center; color:#202124;
+}
+.app{width:min(860px,96vw); padding:30px 0 40px}
+h1{text-align:center;margin:0 0 15px;font-size:38.4px; font-weight: bold;}
+.progress{text-align:center;font-size:21.6px;color:#444;margin-bottom:20px; font-weight: bold;}
+.card-wrap{perspective:1200px; cursor:pointer}
+.card{
+  width:100%; height:592px; position:relative; transform-style:preserve-3d;
+  transition:transform .55s ease;
+}
+.card.flipped{transform:rotateY(180deg)}
+.face{
+  position:absolute; inset:0; backface-visibility:hidden; -webkit-backface-visibility:hidden;
+  border-radius:24px; background:white; box-shadow:0 15px 45px rgba(0,0,0,.15);
+  display:flex; flex-direction:column; padding:36px; border:3px solid #eee; overflow-y:auto;
+}
+.front{justify-content:flex-start; align-items:flex-start; text-align:left}
+.back{transform:rotateY(180deg); text-align:left; align-items:flex-start; justify-content:flex-start; padding-top:40px;}
+
+.hl{color: #7c2d12; font-weight: bold; background-color: #fef08a; padding: 2px 6px; border-radius: 4px; border: 1px solid #eab308;}
+.hl-blue { color: #ffffff; font-weight: bold; background-color: #2563eb; padding: 2px 6px; border-radius: 4px; }
+.hl-red { color: #dc2626; font-weight: bold; }
+
+/* Pinyin mặt trước: căn giữa */
+.pinyin{
+  font-size:1.68em;
+  color:#666666;
+  margin-bottom:10px;
+  font-weight:bold;
+  text-align:center;
+  width:100%;
+}
+
+.zh-front { font-size: 2.16em; font-weight: bold; margin-bottom: 6px; line-height: 1.3; color: #dc2626; text-align: center; width: 100%; }
+
+/* Mặt sau */
+.zh-back { color: #2563eb; font-weight: bold; font-size: 1.74em; line-height: 1.2; display: block; margin-top: 12px; margin-bottom: 2px; }
+.pinyin-back { color: #666666; font-weight: bold; font-size: 1.2em; display: block; margin: 2px 0; }
+.vi-back { font-size: 1.2em; color: #333; display: block; margin-bottom: 12px; }
+
+.desc-front { font-size: 1.38em; color: #333; margin: 8px 0; text-align: left; width: 100%; line-height: 1.4; }
+.desc{font-size: 1.38em; color: #333; margin: 0; text-align: left; width: 100%; line-height: 1.4;}
+
+.controls{display:flex;gap:20px;justify-content:center;margin-top:30px}
+button{
+  border:0;border-radius:20px;padding:20px 35px;font-size:26.4px;
+  cursor:pointer;background:#e9eef7;color:#233044; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,.1);
+}
+button.primary{background:#2563eb;color:white}
+</style>
+</head>
+
+<body>
+<div class="app">
+  <h1 id="title">BÀI 12 – NGỮ PHÁP</h1>
+  <div class="progress" id="progress"></div>
+
+  <div class="card-wrap" id="cardWrap" onclick="flipCard()">
+    <div class="card" id="card">
+      <div class="face front" id="frontFace"></div>
+      <div class="face back" id="backFace"></div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button onclick="event.stopPropagation();prevCard()">← TRƯỚC</button>
+    <button class="primary" onclick="event.stopPropagation();flipCard()">LẬT THẺ</button>
+    <button onclick="event.stopPropagation();nextCard()">TIẾP →</button>
+  </div>
+</div>
+
+<script>
+const cards = [
+  {
+    f: "<div class='zh-front'>CÁCH DÙNG 想 VÀ 要</div>" +
+       "<div class='desc-front'>" +
+       "Hai từ này đều diễn tả ý muốn hoặc nhu cầu, nhưng sắc thái ý nghĩa có sự khác biệt rõ rệt:<br><br>" +
+       "• <span class='hl'>想 (xiǎng):</span> Nguyện vọng chủ quan, thiên về mong muốn, dự định hoặc hy vọng.<br>" +
+       "• <span class='hl'>要 (yào):</span> <br>" +
+       "- Ý chí chủ quan mạnh mẽ (quyết định/yêu cầu). Phủ định: <span class='hl-red'>不想 (bù xiǎng)</span>.<br>" +
+       "- Nhu cầu khách quan, sự cần thiết. Phủ định: <span class='hl-red'>不用 (bú yòng)</span>." +
+       "</div>",
+    b: "<div class='desc'>" +
+       "<span class='zh-back'>你想去图书馆吗?</span><span class='pinyin-back'>Nǐ xiǎng qù túshūguǎn ma?</span><span class='vi-back'>(Bạn có muốn đi thư viện không?)</span>" +
+       "<span class='zh-back'>我不想去图书馆，我想在家看电视。</span><span class='pinyin-back'>Wǒ bù xiǎng qù túshūguǎn, wǒ xiǎng zài jiā kàn diànshì.</span><span class='vi-back'>(Tôi không muốn đi thư viện, tôi muốn ở nhà xem tivi.)</span>" +
+       "<span class='zh-back'>下午我要给妈妈打个电话。</span><span class='pinyin-back'>Xiàwǔ wǒ yào gěi māma dǎ gè diànhuà.</span><span class='vi-back'>(Chiều nay tôi sẽ gọi điện cho mẹ.)</span>" +
+       "<span class='zh-back'>你要买点儿苹果吗？</span><span class='pinyin-back'>Nǐ yào mǎi diǎnr píngguǒ ma?</span><span class='vi-back'>(Bạn có muốn mua táo không?)</span>" +
+       "<span class='zh-back'>我不想买苹果。</span><span class='pinyin-back'>Wǒ bù xiǎng mǎi píngguǒ.</span><span class='vi-back'>(Tôi không muốn mua táo.)</span>" +
+       "<span class='zh-back'>要我帮你吗？ - 谢谢，不用。</span><span class='pinyin-back'>Yào wǒ bāng nǐ ma? - Xièxie, bú yòng.</span><span class='vi-back'>(Có cần tôi giúp bạn không? - Cảm ơn, không cần đâu.)</span>" +
+       "<span class='zh-back'>天气很好，不用带雨伞。</span><span class='pinyin-back'>Tiānqì hěn hǎo, bú yòng dài yǔsǎn.</span><span class='vi-back'>(Thời tiết rất tốt, không cần mang ô.)</span>" +
+       "<span class='zh-back'>我不要去饭馆。</span><span class='pinyin-back'>Wǒ bú yào qù fànguǎn.</span><span class='vi-back'>(Tôi không muốn đi nhà hàng.)</span>" +
+       "<span class='zh-back'>他们想吃饭。他们想去旅行。</span><span class='pinyin-back'>Tāmen xiǎng chīfàn. Tāmen xiǎng qù lǚxíng.</span><span class='vi-back'>(Họ muốn ăn cơm. Họ muốn đi du lịch.)</span>" +
+       "<span class='zh-back'>A: 你要喝咖啡吗？<br>B: 我不想喝咖啡，我要喝牛奶。</span><span class='pinyin-back'>A: Nǐ yào hē kāfēi ma? <br>B: Wǒ bù xiǎng hē kāfēi, wǒ yào hē niúnǎi.</span><span class='vi-back'>(A: Bạn muốn uống cà phê không? <br>B: Tôi không muốn uống cà phê, tôi muốn uống sữa.)</span>" +
+       "<span class='zh-back'>A: 今晚咱们去饭馆吃饭，怎么样？<br>B: 我不想去饭馆，我想在家吃。</span><span class='pinyin-back'>A: Jīnwǎn zánmen qù fànguǎn chīfàn, zěnmeyàng? <br>B: Wǒ bù xiǎng qù fànguǎn, wǒ xiǎng zài jiā chī.</span><span class='vi-back'>(A: Tối nay chúng ta đi nhà hàng ăn, thế nào? <br>B: Tôi không muốn đi nhà hàng, tôi muốn ăn ở nhà.)</span>" +
+       "</div>"
+  },
+  {
+    f: "<div class='zh-front'>ĐỘNG TỪ LẶP LẠI<br><span style='font-size: 0.75em;'>（AA hoặc ABAB）</span></div>" +
+       "<div class='desc-front'>" +
+       "Trong khẩu ngữ, việc lặp lại động từ giúp câu nói trở nên <span class='hl'>nhẹ nhàng, thoải mái, bớt gay gắt</span>.<br>" +
+       "Hàm ý thời gian diễn ra hành động <span class='hl'>ngắn</span> hoặc mang tính chất <span class='hl'>thử nghiệm</span>.<br><br>" +
+       "• <span class='hl-red'>Động từ đơn âm tiết:</span><br>" +
+       "Lặp lại thành dạng <span class='hl'>AA</span> hoặc <span class='hl'>A一A</span>.<br><br>" +
+       "• <span class='hl-red'>Động từ hai âm tiết:</span><br>" +
+       "Lặp lại thành dạng <span class='hl'>ABAB</span>." +
+       "</div>",
+    b: "<div class='desc'>" +
+       "<span class='zh-back'>您给我介绍介绍。</span><span class='pinyin-back'>Nín gěi wǒ jièshào jièshào.</span><span class='vi-back'>(Xin giới thiệu giúp tôi chút.)</span>" +
+       "<span class='zh-back'>我可以试试吗？</span><span class='pinyin-back'>Wǒ kěyǐ shì shi ma?</span><span class='vi-back'>(Tôi có thể thử một chút không?)</span>" +
+       "<span class='zh-back'>星期天在家看看电视，听听音乐，休息休息，真好！</span><span class='pinyin-back'>Xīngqītiān zài jiā kànkan diànshì, tīngting yīnyuè, xiūxi xiūxi, zhēn hǎo!</span><span class='vi-back'>(Chủ nhật ở nhà xem tivi, nghe nhạc, nghỉ ngơi một chút thật tuyệt!)</span>" +
+       "<span class='zh-back'>你尝尝，饺子怎么样？</span><span class='pinyin-back'>Nǐ chángchang, jiǎozi zěnmeyàng?</span><span class='vi-back'>(Bạn nếm thử xem, bánh bao thế nào?)</span>" +
+       "<span class='zh-back'>试条裤子。</span><span class='pinyin-back'>Shì tiáo kùzi.</span><span class='vi-back'>(Thử cái quần này xem.)</span>" +
+       "<span class='zh-back'>算算。</span><span class='pinyin-back'>Suàn suàn.</span><span class='vi-back'>(Tính toán xem.)</span>" +
+       "</div>"
+  },
+  {
+    f: "<div class='zh-front'>VỪA... VỪA... (又…又…)</div>" +
+       "<div class='desc-front'>" +
+       "Dùng để nối hai tính chất hoặc trạng thái <span class='hl'>cùng tồn tại song song</span> trong một sự vật, sự việc.<br><br>" +
+       "• <span class='hl-red'>Cấu trúc:</span><br>" +
+       "又 + Tính từ 1 + 又 + Tính từ 2" +
+       "</div>",
+    b: "<div class='desc'>" +
+       "<span class='zh-back'>质量又好，价钱又便宜。</span><span class='pinyin-back'>Zhìliàng yòu hǎo, jiàqian yòu piányi.</span><span class='vi-back'>(Chất lượng vừa tốt, giá lại vừa rẻ.)</span>" +
+       "<span class='zh-back'>又贵又不好看。</span><span class='pinyin-back'>Yòu guì yòu bù hǎokàn.</span><span class='vi-back'>(Vừa đắt vừa xấu.)</span>" +
+       "<span class='zh-back'>我同屋又努力又友好。</span><span class='pinyin-back'>Wǒ tóngwū yòu nǔlì yòu yǒuhǎo.</span><span class='vi-back'>(Bạn cùng phòng của tôi vừa chăm chỉ vừa thân thiện.)</span>" +
+       "<span class='zh-back'>颐和园又大又漂亮。</span><span class='pinyin-back'>Yíhéyuán yòu dà yòu piàoliang.</span><span class='vi-back'>(Di Hòa Viên vừa rộng vừa đẹp.)</span>" +
+       "<span class='zh-back'>小西的姐姐又高又漂亮。</span><span class='pinyin-back'>Xiǎoxī de jiějie yòu gāo yòu piàoliang.</span><span class='vi-back'>(Chị gái của Tiểu Tây vừa cao vừa xinh.)</span>" +
+       "</div>"
+  },
+  {
+    f: "<div class='zh-front'>PHÂN BIỆT 一点儿 VÀ 有点儿</div>" +
+       "<div class='desc-front'>" +
+       "• <span class='hl'>一点儿:</span> Lượng từ chỉ số lượng ít, đứng trước danh từ (<span class='hl-red'>một chút, một ít</span>) hoặc sau tính từ (<span class='hl-red'>hơn một chút</span>).<br><br>" +
+       "• <span class='hl'>有点儿:</span> Phó từ (<span class='hl-red'>có hơi</span>), đứng trước động từ/tính từ. Khi đứng trước tính từ thường mang sắc thái <span class='hl-red'>phàn nàn, không hài lòng, tiêu cực nhẹ</span>.<br>" +
+       "*(Trong khẩu ngữ, chữ 一 thường được lược bỏ).* " +
+       "</div>",
+    b: "<div class='desc'>" +
+       "<span class='zh-back'>今天我只吃了一点儿饭。</span><span class='pinyin-back'>Jīntiān wǒ zhǐ chī le yìdiǎnr fàn.</span><span class='vi-back'>(Hôm nay tôi chỉ ăn một chút cơm.)</span>" +
+       "<span class='zh-back'>我想去商店买点儿东西。</span><span class='pinyin-back'>Wǒ xiǎng qù shāngdiàn mǎi diǎnr dōngxi.</span><span class='vi-back'>(Tôi muốn đi cửa hàng mua chút đồ.)</span>" +
+       "<span class='zh-back'>有大一点儿的鞋吗？</span><span class='pinyin-back'>Yǒu dà yìdiǎnr de xié ma?</span><span class='vi-back'>(Có đôi giày to hơn chút không?)</span>" +
+       "<span class='zh-back'>明天我要早点儿来教室。</span><span class='pinyin-back'>Míngtiān wǒ yào zǎodiǎnr lái jiàoshì.</span><span class='vi-back'>(Ngày mai tôi sẽ đến lớp sớm hơn chút.)</span>" +
+       "<span class='zh-back'>那件衬衣有点儿贵。</span><span class='pinyin-back'>Nà jiàn chènyī yǒudiǎnr guì.</span><span class='vi-back'>(Cái áo sơ mi kia hơi đắt.)</span>" +
+       "<span class='zh-back'>今天我有点儿累，不想吃饭。</span><span class='pinyin-back'>Jīntiān wǒ yǒudiǎnr lèi, bù xiǎng chīfàn.</span><span class='vi-back'>(Hôm nay tôi hơi mệt, không muốn ăn cơm.)</span>" +
+       "<span class='zh-back'>他有点儿不高兴。</span><span class='pinyin-back'>Tā yǒudiǎnr bù gāoxìng.</span><span class='vi-back'>(Anh ấy hơi không vui.)</span>" +
+       "</div>"
+  }
+];
+
+let idx = 0;
+
+function render() {
+  document.getElementById('frontFace').innerHTML = cards[idx].f;
+  document.getElementById('backFace').innerHTML = cards[idx].b;
+  document.getElementById('progress').innerText = `Thẻ ${idx + 1} / ${cards.length}`;
+}
+
+function flipCard() {
+  document.getElementById('card').classList.toggle('flipped');
+}
+
+function nextCard() {
+  idx = (idx + 1) % cards.length;
+  document.getElementById('card').classList.remove('flipped');
+  render();
+}
+
+function prevCard() {
+  idx = (idx - 1 + cards.length) % cards.length;
+  document.getElementById('card').classList.remove('flipped');
+  render();
+}
+
+document.addEventListener('keydown', function(event) {
+  if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+    nextCard();
+    event.preventDefault();
+  } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+    prevCard();
+    event.preventDefault();
+  } else if (event.key === ' ' || event.key === 'Enter') {
+    flipCard();
+    event.preventDefault();
+  }
+});
+
+render();
+</script>
+</body>
+</html>
